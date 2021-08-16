@@ -208,28 +208,37 @@ class User:
 
     def downloadMyFollowingPP(self,useOldData = False):
         if useOldData:
+            
             if not self.isLoadLastFollowingDB:
-                print("You cant use old data!")  
+                print("You cant use old data!")
+            else:
+                self.getMyFollowingFromDB()
         else:
             self.getMyFollowing()
-        for _,src,_,username in self.followingList:
+        
+        for index,(_,src,_,username) in enumerate(self.followingList,start=1):
             if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"):
                 mkdir(( getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"))
             location = fr"\usersLog\{self.username}\pictures\myFollowingPP\{username}\pp-{self.__getTimeTimeInt()}.png"
             urlretrieve(src, (getcwd() + location))
+            print(f"Downloading {username}'s photo. ({index} of {len(self.followersList)})")
     
     def downloadMyFollowersPP(self,useOldData = False):
         if useOldData:
+
             if not self.isLoadLastFollowersDB:
                 print("You cant use old data!")
+            else:
+                self.getMyFollowersFromDB()
         else:
             self.getMyFollowers()
         
-        for _,src,_,username in self.followersList:
+        for index ,(_,src,_,username) in enumerate(self.followersList,start=1):
             if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"):
                 mkdir((getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"))
             location = fr"\usersLog\{self.username}\pictures\myFollowersPP\{username}\pp-{self.__getTimeTimeInt()}.png"
             urlretrieve(src, (getcwd() + location))
+            print(f"Downloading {username}'s photo. ({index} of {len(self.followersList)})")
 
     def getMyFollowing(self,saveInFile = False):
         self.followingList = []
