@@ -187,6 +187,7 @@ class Instagram:
                 timeList.append(i)
             self.lastFollowersTableName = max(timeList)     
             self.isLoadOldFollowersTable = True
+            self.getMyFollowersFromDB()
             vt.close()      
         if path.exists(getcwd() + fr"\usersLog\{self.username}\myFollowing\myFollowing.db"):
             vt=sq.connect(getcwd() + fr"\usersLog\{self.username}\myFollowing\myFollowing.db")
@@ -199,6 +200,7 @@ class Instagram:
                 timeList.append(i)
             self.lastFollowingTableName = max(timeList)
             self.isLoadOldFollowingTable = True
+            self.getMyFollowingFromDB()
             vt.close()
 
     def __getTimeTimeInt(self):
@@ -225,44 +227,50 @@ class Instagram:
         action.perform()
         action.reset_actions()
 
-# TODO HATA VERİYOR ÇÖZ
+    # useOldData = True iken indirme yapılmıyor
     def downloadMyFollowingPP(self,useOldData = False):
+        control = False
         if useOldData:
-            
             if not self.isLoadLastFollowingDB:
                 print("You cant use old data!")
+
             else:
                 self.getMyFollowingFromDB()
+                control = True
         else:
             self.getMyFollowing()
-        
-        for index,(_,src,_,username) in enumerate(self.followingList,start=1):
-            if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"):
-                mkdir(( getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"))
-            location = fr"\usersLog\{self.username}\pictures\myFollowingPP\{username}\pp-{self.__getTimeTimeInt()}.png"
-            urlretrieve(src, (getcwd() + location))
-            print(f"Downloading {username}'s photo. ({index} of {len(self.followersList)})")
+            control = True
+        if control:
+            for index,(_,src,_,username) in enumerate(self.followingList,start=1):
+                if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"):
+                    mkdir(( getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowingPP\\{username}"))
+                location = fr"\usersLog\{self.username}\pictures\myFollowingPP\{username}\pp-{self.__getTimeTimeInt()}.png"
+                urlretrieve(src, (getcwd() + location))
+                print(f"Downloading {username}'s photo\n({index} of {self.lenFollowingList})",end='\r')
 
-# TODO HATA VERİYOR ÇÖZ
+    # useOldData = True iken indirme yapılmıyor
     def downloadMyFollowersPP(self,useOldData = False):
+        control = False
         if useOldData:
-
             if not self.isLoadLastFollowersDB:
                 print("You cant use old data!")
             else:
                 self.getMyFollowersFromDB()
+                control = True
         else:
             self.getMyFollowers()
-        
-        for index ,(_,src,_,username) in enumerate(self.followersList,start=1):
-            if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"):
-                mkdir((getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"))
-            location = fr"\usersLog\{self.username}\pictures\myFollowersPP\{username}\pp-{self.__getTimeTimeInt()}.png"
-            urlretrieve(src, (getcwd() + location))
-            print(f"Downloading {username}'s photo. ({index} of {len(self.followersList)})")
+            control = True
+        if control:
+            for index ,(_,src,_,username) in enumerate(self.followersList,start=1):
+                if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"):
+                    mkdir((getcwd() + fr"\usersLog\\{self.username}\\pictures\\myFollowersPP\\{username}"))
+                location = fr"\usersLog\{self.username}\pictures\myFollowersPP\{username}\pp-{self.__getTimeTimeInt()}.png"
+                urlretrieve(src, (getcwd() + location))
+                print(f"Downloading {username}'s photo\n({index} of {self.lenFollowersList})",end='\r')
 
     def getMyFollowing(self,saveInFile = False):
         self.followingList = []
+        self.lenFollowingList = 0
         if self.__isLogin:
             sleep(2)
             if self.browser.current_url == (MAINURL + self.username + "/"):
@@ -277,15 +285,15 @@ class Instagram:
             control = True
             lastLastElement = ""
             count = 0
+            print(f"Login: {self.__isLogin}\nUsername: {self.username}")
+            print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
             while control:
                 #dialog.click()
                 self.__click(580,230)
                 action.key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
                 allElement = dialog.find_elements_by_css_selector("li")
                 lastElement = str(allElement[-1]).replace("<selenium.webdriver.remote.webelement.WebElement "," ").replace(">","").strip()[54:90]
-                print(f"Login: {self.__isLogin}\nUsername: {self.username}")
-                print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
-                print(f"Getting Followers: {len(allElement)} of {self.followingCount}")
+                print(f"Getting Following: {len(allElement)} of {self.followingCount}", end='\r')
                 if lastLastElement == lastElement:
                     if count == 5 :
                         control = False
@@ -307,6 +315,7 @@ class Instagram:
                 username = link.replace("https://www.instagram.com/","").replace("/","")
                 liCount+=1
                 self.followingList.append((link,src,name,username))
+            self.lenFollowingList = len(self.followingList)
             self.isGetMyFollowing=True
             if saveInFile:
                 vt = sq.connect(getcwd() + fr"\usersLog\{self.username}\myFollowing\myFollowing.db")
@@ -330,6 +339,7 @@ class Instagram:
     def getMyFollowingFromDB(self):
         if self.isLoadOldFollowingTable:
             self.followingList = []
+            self.lenFollowingList = 0
             vt = sq.connect(getcwd() + fr"\usersLog\{self.username}\myFollowing\myFollowing.db")
             im = vt.cursor()
             im.execute(f"SELECT * FROM '{self.lastFollowingTableName}'")
@@ -339,6 +349,7 @@ class Instagram:
                 _ , username , srcUrl , url , name = i
                 self.followingList.append((url,srcUrl,name,username))
             self.isLoadLastFollowingDB = True
+            self.lenFollowingList = len(self.followingList)
             return self.followingList
         else:
             print("Error (is load old following table?)")
@@ -346,6 +357,7 @@ class Instagram:
     def getMyFollowersFromDB(self):
         if self.isLoadOldFollowersTable:
             self.followersList = []
+            self.lenFollowersList = 0
             vt = sq.connect(getcwd() + fr"\usersLog\{self.username}\myFollowers\myFollowers.db")
             im = vt.cursor()
             im.execute(f"SELECT * FROM '{self.lastFollowersTableName}'")
@@ -354,6 +366,7 @@ class Instagram:
             for i in veriler:
                 _ , username , srcUrl , url , name = i
                 self.followersList.append((url,srcUrl,name,username))
+                self.lenFollowersList = len(self.followersList)
             self.isLoadLastFollowersDB = True
             return self.followersList
         else:
@@ -489,6 +502,7 @@ class Instagram:
 
     def getMyFollowers(self,saveInFile = False):
         self.followersList = []
+        self.lenFollowersList = 0
         if self.__isLogin:
             sleep(2)
             if self.browser.current_url == (MAINURL + self.username + "/"):
@@ -504,15 +518,15 @@ class Instagram:
             control = True
             lastLastElement = ""
             count = 0
+            print(f"Login: {self.__isLogin}\nUsername: {self.username}")
+            print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
             while control:
                 #dialog.click()
                 self.__click(611,183)
                 action.key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
                 allElement = dialog.find_elements_by_css_selector("li")
                 lastElement = str(allElement[-1]).replace("<selenium.webdriver.remote.webelement.WebElement "," ").replace(">","").strip()[54:90]
-                print(f"Login: {self.__isLogin}\nUsername: {self.username}")
-                print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
-                print(f"Getting Followers: {len(allElement)} of {self.followersCount}")
+                print(f"Getting Followers: {len(allElement)} of {self.followersCount}", end='\r')
                 if lastLastElement == lastElement:
                     if count == 5 :
                         control = False
@@ -535,6 +549,7 @@ class Instagram:
                 self.followersList.append((link,src,name,username))
                 liCount+=1
             self.isGetMyFollowers=True
+            self.lenFollowersList = len(self.followersList)
             if saveInFile:
                 vt = sq.connect(getcwd() + fr"\usersLog\{self.username}\myFollowers\myFollowers.db")
                 im = vt.cursor()
