@@ -15,7 +15,7 @@ from shutil import rmtree
 LOGINUSERNAMEXPATH = "//*[@id='loginForm']/div/div[1]/div/label/input"
 LOGINPASSWORDXPATH = "//*[@id='loginForm']/div/div[2]/div/label/input"
 LOGINBUTTONXPATH = "//*[@id='loginForm']/div/div[3]/button"
-FOLLOWİNGXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span"
+FOLLOWINGXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span"
 FOLLOWERSXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[2]/a/span"
 EDITUSERNAMEXPATH = "//*[@id='react-root']/section/main/div/article/div/div[2]/h1"
 POSTCOUNTXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[1]/span/span"
@@ -96,7 +96,7 @@ class Instagram:
             self.browser.get(MAINURL + self.username)
             sleep(2)
             self.followersCount = self.browser.find_element_by_xpath(FOLLOWERSXPATH).get_attribute('title')
-            self.followingCount = self.browser.find_element_by_xpath(FOLLOWİNGXPATH).text
+            self.followingCount = self.browser.find_element_by_xpath(FOLLOWINGXPATH).text
             self.postCount = self.browser.find_element_by_xpath(POSTCOUNTXPATH).text
             self.profilePictureUrl = self.browser.find_element_by_xpath(PPXPATH).get_attribute('src')
 
@@ -255,11 +255,11 @@ class Instagram:
         if self.__isLogin:
             sleep(2)
             if self.browser.current_url == (MAINURL + self.username + "/"):
-                self.browser.find_element_by_xpath(FOLLOWİNGXPATH).click()
+                self.browser.find_element_by_xpath(FOLLOWINGXPATH).click()
             else:
                 self.browser.get(MAINURL + self.username)
                 sleep(2)
-                self.browser.find_element_by_xpath(FOLLOWİNGXPATH).click()
+                self.browser.find_element_by_xpath(FOLLOWINGXPATH).click()
             sleep(2)
             action = ActionChains(self.browser)
             dialog = self.browser.find_element_by_css_selector("div[role=dialog] ul")
