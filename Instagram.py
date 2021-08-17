@@ -11,6 +11,7 @@ import sqlite3  as sq
 from os import getcwd, mkdir, path, system, remove,rmdir
 from hashlib import md5
 from shutil import rmtree
+from winreg import HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
 LOGINUSERNAMEXPATH = "//*[@id='loginForm']/div/div[1]/div/label/input"
 LOGINPASSWORDXPATH = "//*[@id='loginForm']/div/div[2]/div/label/input"
@@ -38,16 +39,19 @@ USERSLOGPICTURESFOLDER = ["myPP","myFollowingPP","myFollowersPP","myPost","other
 
 
 class Instagram:
-    
+    EXECUTABLEPATH = r"driver\chromedriver.exe"
+
     __isLogin = False
+    __isPasswordMatch = False
+
     isGetMyFollowers = False
     isGetMyFollowing = False
-    isPasswordMatch = False
+    
     isLoadOldFollowersTable = False
     isLoadOldFollowingTable = False
     isLoadLastFollowingDB = False
     isLoadLastFollowersDB = False
-    EXECUTABLEPATH = r"driver\chromedriver.exe"
+    
     
     def __init__(self,username,password,headless = False):
         self.username = username
@@ -55,7 +59,7 @@ class Instagram:
         self.passMd5 = md5(self.password.encode()).hexdigest()
 
         self.__checkJson()
-        if self.isPasswordMatch: self.__checkOldData()
+        if self.__isPasswordMatch: self.__checkOldData()
 
 
         for i in FOLDERS:
@@ -68,17 +72,18 @@ class Instagram:
         options.add_argument("--log-level=3")
         options.headless = headless
         self.browser = Chrome(executable_path=self.EXECUTABLEPATH,options=options)
+
         self.browser.set_window_position(0,0)
         self.browser.set_window_size(1024,768)
 
-
+        system("cls")
+        print("logging in...")
         self.browser.get(MAINURL + LOGINPAGEURL) 
         sleep(2)
         if self.browser.current_url != MAINURL + LOGINPAGEURL:
             self.__isLogin = True
         else:
             self.__login()
-
             sleep(4)
             self.browser.get(MAINURL + LOGINPAGEURL)
             sleep(2)
@@ -90,7 +95,7 @@ class Instagram:
                 self.browser.close()
         
         self.__getAccountDetail()
-
+        system("cls")
         print(f"Login: {self.__isLogin}\nUsername: {self.username}")
         if self.__isLogin:
             self.browser.get(MAINURL + self.username)
@@ -100,40 +105,46 @@ class Instagram:
             self.postCount = self.browser.find_element_by_xpath(POSTCOUNTXPATH).text
             self.profilePictureUrl = self.browser.find_element_by_xpath(PPXPATH).get_attribute('src')
 
-            if not path.exists(getcwd() + fr"\usersLog\\{self.username}"):
-                mkdir(fr"usersLog\{self.username}")
-            for i in USERSLOGFOLDER:
-                if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\{i}"):
-                    mkdir(fr"usersLog\{self.username}\\{i}")
-            for i in USERSLOGPICTURESFOLDER:
-                if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\{i}"):
-                    mkdir(fr"usersLog\{self.username}\\pictures\\{i}")
+            self.__createFolder()
 
-            try:
-                location = fr"\usersLog\{self.username}\pictures\myPP\pp-{self.__getTimeTimeInt()}.png"
-                urlretrieve(self.profilePictureUrl, (getcwd() + location))
-                self.profilePictureLocal = (getcwd() + location)
-            except:
-                print("Profile picture could not be downloaded, please try again later.")
-                self.profilePictureLocal = None
+            self.__downloadPP()
 
             print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\nPost Count: {self.postCount}\n")
-            jsonDataSet = {
-                "time" : time(),
-                "username" : self.username,
-                "password" : self.passMd5,
-                "name" : self.name,
-                "email" : self.email,
-                "telephoneNumber" : self.telephoneNumber,
-                "ppURL" : self.profilePictureUrl,
-                "ppLocal" : self.profilePictureLocal,
-                "followersCount" : self.followersCount,
-                "followingCount" : self.followingCount,
-                "postCount" : self.postCount
-            }
-            jsonDump = dumps(jsonDataSet)
-            with open(getcwd() + fr"\usersLog\\{self.username}\\userlog.json","w") as json:
-                json.write(jsonDump)
+            self.__saveJSON()
+
+    def __downloadPP(self):
+        try:
+            location = fr"\usersLog\{self.username}\pictures\myPP\pp-{self.__getTimeTimeInt()}.png"
+            urlretrieve(self.profilePictureUrl, (getcwd() + location))
+        except Exception as e:
+            print(f"Profile picture could not be downloaded, please try again later. Detail {e}")
+
+    def __createFolder(self):
+        if not path.exists(getcwd() + fr"\usersLog\\{self.username}"):
+            mkdir(fr"usersLog\{self.username}")
+        for i in USERSLOGFOLDER:
+            if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\{i}"):
+                mkdir(fr"usersLog\{self.username}\\{i}")
+        for i in USERSLOGPICTURESFOLDER:
+            if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\{i}"):
+                mkdir(fr"usersLog\{self.username}\\pictures\\{i}")
+
+    def __saveJSON(self):
+        jsonDataSet = {
+            "time" : time(),
+            "username" : self.username,
+            "password" : self.passMd5,
+            "name" : self.name,
+            "email" : self.email,
+            "telephoneNumber" : self.telephoneNumber,
+            "ppURL" : self.profilePictureUrl,
+            "followersCount" : self.followersCount,
+            "followingCount" : self.followingCount,
+            "postCount" : self.postCount
+        }
+        jsonDump = dumps(jsonDataSet)
+        with open(getcwd() + fr"\usersLog\\{self.username}\\userlog.json","w") as json:
+            json.write(jsonDump)
 
     def __login(self):
         self.browser.find_element_by_xpath(
@@ -160,9 +171,9 @@ class Instagram:
         if path.exists(getcwd() + fr"\usersLog\{self.username}\userlog.json"): 
             try:
                 jsonUser = load(open(getcwd() + fr"\usersLog\{self.username}\userlog.json"))
-                self.isPasswordMatch = True  if self.passMd5 == jsonUser["password"] else False
+                self.__isPasswordMatch = True  if self.passMd5 == jsonUser["password"] else False
             except:
-                self.isPasswordMatch = False
+                self.__isPasswordMatch = False
 
     def __checkOldData(self):
         if path.exists(getcwd() + fr"\usersLog\{self.username}\myFollowers\myFollowers.db"):
@@ -569,6 +580,7 @@ class Instagram:
     def closeBrowser(self):
         """Closes the browser"""
         self.browser.close()
+
 
 
 
