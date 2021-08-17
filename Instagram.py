@@ -12,18 +12,34 @@ from os import getcwd, mkdir, path, system, remove,rmdir
 from hashlib import md5
 from shutil import rmtree
 
+LOGINUSERNAMEXPATH = "//*[@id='loginForm']/div/div[1]/div/label/input"
+LOGINPASSWORDXPATH = "//*[@id='loginForm']/div/div[2]/div/label/input"
+LOGINBUTTONXPATH = "//*[@id='loginForm']/div/div[3]/button"
+FOLLOWİNGXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span"
+FOLLOWERSXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[2]/a/span"
+EDITUSERNAMEXPATH = "//*[@id='react-root']/section/main/div/article/div/div[2]/h1"
+POSTCOUNTXPATH = "//*[@id='react-root']/section/main/div/header/section/ul/li[1]/span/span"
+PPXPATH = "//*[@id='react-root']/section/main/div/header/div/div/div/button/img"
+NAMEXPATH = "//*[@id='pepName']"
+EMAILXPATH = "//*[@id='pepEmail']"
+TELXPATH = "//*[@id='pepPhone Number']"
+
+MAINURL  = "https://www.instagram.com/"
+LOGINPAGEURL = "accounts/login/"
+EDITURL = "accounts/edit/"
+
 
 NOTIFICATIONTEXT= "Bildirimleri Aç"
 
-folders = ["chromeProfile", "usersLog"]
-usersLogFolders = ["myFollowing","myFollowers","pictures","unfollowers","didnotfollow"]
-usersLogPicturesFolders = ["myPP","myFollowingPP","myFollowersPP","myPost","otherPost"]
+
+FOLDERS = ["chromeProfile", "usersLog"]
+USERSLOGFOLDER = ["myFollowing","myFollowers","pictures","unfollowers","didnotfollow"]
+USERSLOGPICTURESFOLDER = ["myPP","myFollowingPP","myFollowersPP","myPost","otherPost"]
+
 
 class Instagram:
-    EXECUTABLEPATH = r"driver\chromedriver.exe"
+    
     __isLogin = False
-    isMatch = False
-    isPpDownload = False
     isGetMyFollowers = False
     isGetMyFollowing = False
     isPasswordMatch = False
@@ -31,22 +47,9 @@ class Instagram:
     isLoadOldFollowingTable = False
     isLoadLastFollowingDB = False
     isLoadLastFollowersDB = False
-    mainURL  = "https://www.instagram.com/"
-    loginPageURL = "accounts/login/"
-    accountsEditURL = "accounts/edit/"
-    loginFormUserNameXPath = "//*[@id='loginForm']/div/div[1]/div/label/input"
-    loginFormPasswordXPath = "//*[@id='loginForm']/div/div[2]/div/label/input"
-    loginFormLoginXPath = "//*[@id='loginForm']/div/div[3]/button"
-    followersXPath = "//*[@id='react-root']/section/main/div/header/section/ul/li[2]/a/span"
-    followingXPath = "//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span"
-    accountsEditUsernameXPath = "//*[@id='react-root']/section/main/div/article/div/div[2]/h1"
-    postCountXPath = "//*[@id='react-root']/section/main/div/header/section/ul/li[1]/span/span"
-    profilePictureXPath = "//*[@id='react-root']/section/main/div/header/div/div/div/button/img"
-    nameXPath = "//*[@id='pepName']"
-    emailXPath = "//*[@id='pepEmail']"
-    telephoneXpath = "//*[@id='pepPhone Number']"
+    EXECUTABLEPATH = r"driver\chromedriver.exe"
+    
     def __init__(self,username,password,headless = False):
-        system("cls")
         self.username = username
         self.password = password
         self.passMd5 = md5(self.password.encode()).hexdigest()
@@ -55,7 +58,7 @@ class Instagram:
         if self.isPasswordMatch: self.__checkOldData()
 
 
-        for i in folders:
+        for i in FOLDERS:
             if not path.exists(getcwd() + "\\" + i):
                 mkdir(i)
         
@@ -69,62 +72,52 @@ class Instagram:
         self.browser.set_window_size(1024,768)
 
 
-        self.browser.get(self.mainURL + self.loginPageURL) 
-        system("cls")
+        self.browser.get(MAINURL + LOGINPAGEURL) 
         sleep(2)
-        system("cls")
-        if self.browser.current_url != self.mainURL + self.loginPageURL:
-            # giriş yapılmış
+        if self.browser.current_url != MAINURL + LOGINPAGEURL:
             self.__isLogin = True
         else:
-            # giriş yapılmamış giriş yap
             self.__login()
+
             sleep(4)
-            self.browser.get(self.mainURL + self.loginPageURL)
+            self.browser.get(MAINURL + LOGINPAGEURL)
             sleep(2)
-            if self.browser.current_url != self.mainURL + self.loginPageURL:
+            if self.browser.current_url != MAINURL + LOGINPAGEURL:
                 self.__isLogin = True
             else:
                 print("username or password is incorrect")
+                self.__isLogin = False
                 self.browser.close()
         
         self.__getAccountDetail()
 
         print(f"Login: {self.__isLogin}\nUsername: {self.username}")
         if self.__isLogin:
-            self.browser.get(self.mainURL + self.username)
+            self.browser.get(MAINURL + self.username)
             sleep(2)
-            self.followersCount = self.browser.find_element_by_xpath(self.followersXPath).get_attribute('title')
-            self.followingCount = self.browser.find_element_by_xpath(self.followingXPath).text
-            self.postCount = self.browser.find_element_by_xpath(self.postCountXPath).text
-            self.profilePictureUrl = self.browser.find_element_by_xpath(self.profilePictureXPath).get_attribute('src')
+            self.followersCount = self.browser.find_element_by_xpath(FOLLOWERSXPATH).get_attribute('title')
+            self.followingCount = self.browser.find_element_by_xpath(FOLLOWİNGXPATH).text
+            self.postCount = self.browser.find_element_by_xpath(POSTCOUNTXPATH).text
+            self.profilePictureUrl = self.browser.find_element_by_xpath(PPXPATH).get_attribute('src')
+
             if not path.exists(getcwd() + fr"\usersLog\\{self.username}"):
                 mkdir(fr"usersLog\{self.username}")
-            for i in usersLogFolders:
+            for i in USERSLOGFOLDER:
                 if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\{i}"):
                     mkdir(fr"usersLog\{self.username}\\{i}")
-            for i in usersLogPicturesFolders:
+            for i in USERSLOGPICTURESFOLDER:
                 if not path.exists(getcwd() + fr"\usersLog\\{self.username}\\pictures\\{i}"):
                     mkdir(fr"usersLog\{self.username}\\pictures\\{i}")
+
             try:
                 location = fr"\usersLog\{self.username}\pictures\myPP\pp-{self.__getTimeTimeInt()}.png"
                 urlretrieve(self.profilePictureUrl, (getcwd() + location))
-                # myPPTime = []
-                # myPPDir = listdir((getcwd() + fr"\usersLog\{self.username}\pictures\myPP\\"))
-                # for i in myPPDir:
-                #     i = i.replace("pp-","").replace(".png","")
-                #     myPPTime.append(i)
-                # newPPLoc = f"pp-{max(myPPTime)}.png"
-                # myPPDir.remove(newPPLoc)
-                # comparePictureList(myPPDir,(getcwd() + fr"\usersLog\{self.username}\pictures\myPp\\"),True)
-                self.isPpDownload = True
                 self.profilePictureLocal = (getcwd() + location)
             except:
-                self.isPpDownload = False
                 print("Profile picture could not be downloaded, please try again later.")
                 self.profilePictureLocal = None
 
-            print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\nPost Count: {self.postCount}\nProfile Picture (URL): {self.profilePictureUrl}\nProfile Picture (Local): {self.profilePictureLocal}")
+            print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\nPost Count: {self.postCount}\n")
             jsonDataSet = {
                 "time" : time(),
                 "username" : self.username,
@@ -144,22 +137,20 @@ class Instagram:
 
     def __login(self):
         self.browser.find_element_by_xpath(
-            self.loginFormUserNameXPath).send_keys(self.username)
+            LOGINUSERNAMEXPATH).send_keys(self.username)
         self.browser.find_element_by_xpath(
-            self.loginFormPasswordXPath).send_keys(self.password)
+            LOGINPASSWORDXPATH).send_keys(self.password)
         self.browser.find_element_by_xpath(
-            self.loginFormLoginXPath).send_keys(Keys.ENTER)       
+            LOGINBUTTONXPATH).send_keys(Keys.ENTER)       
 
     def __getAccountDetail(self):
-        self.browser.get(self.mainURL + self.accountsEditURL)
+        self.browser.get(MAINURL + EDITURL)
         sleep(2)
-        if self.browser.find_element_by_xpath(self.accountsEditUsernameXPath).text == self.username:
-            self.isMatch = True
-            self.name = self.browser.find_element_by_xpath(self.nameXPath).get_attribute("value")
-            self.email = self.browser.find_element_by_xpath(self.emailXPath).get_attribute("value")
-            self.telephoneNumber = self.browser.find_element_by_xpath(self.telephoneXpath).get_attribute("value")
+        if self.browser.find_element_by_xpath(EDITUSERNAMEXPATH).text == self.username:
+            self.name = self.browser.find_element_by_xpath(NAMEXPATH).get_attribute("value")
+            self.email = self.browser.find_element_by_xpath(EMAILXPATH).get_attribute("value")
+            self.telephoneNumber = self.browser.find_element_by_xpath(TELXPATH).get_attribute("value")
         else:
-            self.isMatch = False
             self.__isLogin = False
             print("Please try again")
             self.browser.close()
@@ -206,6 +197,23 @@ class Instagram:
         parser = dt.datetime.now()
         return parser.strftime("%d.%m.%Y.%H-%M-%S")
 
+    def __checkNotification(self):
+        isShow = False
+        try:
+            notificationText = self.browser.find_element_by_xpath('/html/body/div[6]/div/div/div/div[2]/h2').text
+            if notificationText == NOTIFICATIONTEXT:
+                isShow = True
+        except Exception as e:
+            print(f"Check notification error detail: {e}")
+        return isShow
+
+    def __click(self,x,y):
+        action = ActionChains(self.browser)
+        action.move_by_offset(x,y)
+        action.click()
+        action.perform()
+        action.reset_actions()
+
 # TODO HATA VERİYOR ÇÖZ
     def downloadMyFollowingPP(self,useOldData = False):
         if useOldData:
@@ -223,6 +231,7 @@ class Instagram:
             location = fr"\usersLog\{self.username}\pictures\myFollowingPP\{username}\pp-{self.__getTimeTimeInt()}.png"
             urlretrieve(src, (getcwd() + location))
             print(f"Downloading {username}'s photo. ({index} of {len(self.followersList)})")
+
 # TODO HATA VERİYOR ÇÖZ
     def downloadMyFollowersPP(self,useOldData = False):
         if useOldData:
@@ -245,12 +254,12 @@ class Instagram:
         self.followingList = []
         if self.__isLogin:
             sleep(2)
-            if self.browser.current_url == (self.mainURL + self.username + "/"):
-                self.browser.find_element_by_xpath(self.followingXPath).click()
+            if self.browser.current_url == (MAINURL + self.username + "/"):
+                self.browser.find_element_by_xpath(FOLLOWİNGXPATH).click()
             else:
-                self.browser.get(self.mainURL + self.username)
+                self.browser.get(MAINURL + self.username)
                 sleep(2)
-                self.browser.find_element_by_xpath(self.followingXPath).click()
+                self.browser.find_element_by_xpath(FOLLOWİNGXPATH).click()
             sleep(2)
             action = ActionChains(self.browser)
             dialog = self.browser.find_element_by_css_selector("div[role=dialog] ul")
@@ -263,7 +272,6 @@ class Instagram:
                 action.key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
                 allElement = dialog.find_elements_by_css_selector("li")
                 lastElement = str(allElement[-1]).replace("<selenium.webdriver.remote.webelement.WebElement "," ").replace(">","").strip()[54:90]
-                system("cls")
                 print(f"Login: {self.__isLogin}\nUsername: {self.username}")
                 print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
                 print(f"Getting Followers: {len(allElement)} of {self.followingCount}")
@@ -343,8 +351,8 @@ class Instagram:
     def getMyPost(self):
         if self.__isLogin:
             sleep(2)
-            if not self.browser.current_url == (self.mainURL + self.username + "/"):
-                self.browser.get(self.mainURL + self.username)
+            if not self.browser.current_url == (MAINURL + self.username + "/"):
+                self.browser.get(MAINURL + self.username)
                 sleep(2)
             article = self.browser.find_elements_by_xpath('/html/body/div[1]/section/main/div/div[3]/article/div/div/div')
             hrefList = []
@@ -373,8 +381,8 @@ class Instagram:
         #post sayısını al eğer post sayısı fazla ise bu işleim uzun süreceğini söyle. 
         if self.__isLogin:
             sleep(2)
-            if not self.browser.current_url == (self.mainURL + usernameOther + "/"):
-                self.browser.get(self.mainURL + usernameOther)
+            if not self.browser.current_url == (MAINURL + usernameOther + "/"):
+                self.browser.get(MAINURL + usernameOther)
                 sleep(2)
             userPostCount = int(self.browser.find_element_by_xpath('/html/body/div[1]/section/main/div/header/section/ul/li[1]/span/span').text)
 
@@ -407,11 +415,6 @@ class Instagram:
             print("you must login first")
 
     def getDifference(self, useOldData = False, saveInFile = False):
-        #url,src,name,username
-        #benim takip ettiklerimden - beni takip edenleri çıkarsam benim takip edip beni takip etmeyenler kalır.
-        #beni takip edenlerden - benim takip ettiklerimi çıkarsam beni takip edip benim etmediklerim kalır.
-        #benim takip ettiklerim following
-        #beni takip edenler followers
         if self.__isLogin:
             myFollowingUsername = []
             myFollowersUsername = []
@@ -477,12 +480,12 @@ class Instagram:
         self.followersList = []
         if self.__isLogin:
             sleep(2)
-            if self.browser.current_url == (self.mainURL + self.username + "/"):
-                self.browser.find_element_by_xpath(self.followersXPath).click()
+            if self.browser.current_url == (MAINURL + self.username + "/"):
+                self.browser.find_element_by_xpath(FOLLOWERSXPATH).click()
             else:
-                self.browser.get(self.mainURL + self.username)
+                self.browser.get(MAINURL + self.username)
                 sleep(2)
-                self.browser.find_element_by_xpath(self.followersXPath).click()
+                self.browser.find_element_by_xpath(FOLLOWERSXPATH).click()
             sleep(2)
             action = ActionChains(self.browser)
             dialog = self.browser.find_element_by_css_selector("div[role=dialog] ul")
@@ -496,7 +499,6 @@ class Instagram:
                 action.key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
                 allElement = dialog.find_elements_by_css_selector("li")
                 lastElement = str(allElement[-1]).replace("<selenium.webdriver.remote.webelement.WebElement "," ").replace(">","").strip()[54:90]
-                system("cls")
                 print(f"Login: {self.__isLogin}\nUsername: {self.username}")
                 print(f"Followers Count: {self.followersCount}\nFollowing Count: {self.followingCount}\n")
                 print(f"Getting Followers: {len(allElement)} of {self.followersCount}")
@@ -541,48 +543,34 @@ class Instagram:
         else:
             print("you must login first")
 
-    def __click(self,x,y):
-        action = ActionChains(self.browser)
-        action.move_by_offset(x,y)
-        action.click()
-        action.perform()
-        action.reset_actions()
-
-    def getSS(self,name):
-        self.browser.save_screenshot(name)
-
     def changeDriverPath(self,path):
+
         self.EXECUTABLEPATH = path
 
     def getLoginStatus(self):
+        """Return login status as boolean"""
         return self.__isLogin
 
     def logOut(self):
+        """Logs out of the current account"""
         if self.__checkNotification():
             self.__click(504,460)
         self.__click(950,27)
         sleep(0.1)
         self.__click(806,226)
         sleep(2)
-        self.browser.get(self.mainURL + self.loginPageURL) 
-        if self.browser.current_url != self.mainURL + self.loginPageURL:
+        self.browser.get(MAINURL + LOGINPAGEURL) 
+        if self.browser.current_url != MAINURL + LOGINPAGEURL:
             self.__isLogin = True
         else:
             self.__isLogin = False
         return not self.__isLogin
         
     def closeBrowser(self):
+        """Closes the browser"""
         self.browser.close()
 
-    def __checkNotification(self):
-        isShow = False
-        try:
-            notificationText = self.browser.find_element_by_xpath('/html/body/div[6]/div/div/div/div[2]/h2').text
-            if notificationText == NOTIFICATIONTEXT:
-                isShow = True
-        except Exception as e:
-            print(f"Check notification error detail: {e}")
-        return isShow
+
 
     
 if __name__ == "__main__":
